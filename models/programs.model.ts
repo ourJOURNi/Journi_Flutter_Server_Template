@@ -15,6 +15,10 @@ const ProgramSchema: any = new mongoose.Schema(
         type: String,
         maxlength: 200,
       },
+      category: {
+        type: String,
+        maxlength: 30,
+      },
       details: {
         type: String,
         maxlength: 800,

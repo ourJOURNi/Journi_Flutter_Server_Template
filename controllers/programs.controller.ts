@@ -26,14 +26,14 @@ exports.getAllPrograms = (req: any, res: any) => {
 
 exports.getProgramInfo = (req: any, res: any) => {
   let id = req.body._id;
-  console.log('Attempting to get all Programs ...')
+  console.log('Attempting to get all Program Info ...')
   Program.findOne(
     {_id: id},
     (err: Error, programs: any) => {
       if(err) res.status(401).json(err);
       if(!programs) res.status(400).json({msg: 'No Programs Array found! Check Program Model'});
       if(programs) {
-        if(programs.length == 0) console.log('No programs saved.')
+        if(programs.length == 0) console.log('No programs found.')
         console.log(programs);
         res.status(200).json(programs)
       };
@@ -98,16 +98,17 @@ exports.editProgram = (req: any, res: any) => {
 
 exports.deleteProgram = (req: any, res: any) => {
     let id = req.body._id;
-    console.log('Attempting to get all Programs ...')
+    console.log('Attempting to Delete a Program ...')
     Program.deleteOne(
         {_id: id},
         (err: Error, programs: any) => {
           if(err) res.status(401).json(err);
           if(!programs) res.status(400).json({msg: 'No Programs Array found! Check Program Model'});
           if(programs) {
-            if(programs.length == 0) console.log('No programs saved.')
+            if(programs.length == 0) console.log('No programs found.')
             res.status(200).json(programs)
           };
         }
   )
 }
+

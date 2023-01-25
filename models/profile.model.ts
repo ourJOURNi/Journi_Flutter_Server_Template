@@ -22,6 +22,10 @@ const ProfileSchema: any = new mongoose.Schema(
         type: String,
         maxlength: 100,
       },
+      favoritePrograms: {
+        type: Array,
+        default: [],
+      },
       password: {
         type: String,
       }

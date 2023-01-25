@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const config = require('../config/default.json'); 
 const bcrypt = require("bcrypt");
 const Profile = require('../models/profile.model.ts');
+const Program = require('../models/programs.model.ts');
 
 interface Profile {
     firstName: string,
@@ -248,15 +249,16 @@ exports.loginProfile = (req: any, res: any) => {
                       token: createToken(profile),
                       firstName: profile.firstName,
                       lastName: profile.lastName,
-                      email: profile.email
+                      email: profile.email,
+                      dateRegistered: profile.dateRegistered
                   });
                   
                 } else {
                   return res.status(200).json({
-                    msg: 'Profile @' + profile.email + ' has logged in.',
                     firstName: profile.firstName,
                     lastName: profile.lastName,
-                    email: profile.email
+                    email: profile.email,
+                    dateRegistered: profile.dateRegistered
                 });
                 };
             } else {
@@ -363,8 +365,8 @@ exports.updateEmail = (req: any, res: any) => {
             if (isMatch && !err) {
               console.log('Passwords matched!');
 
-              // Send Email and Check Code
-              changeEmailCode(newEmail, email, req, res);
+              // TODO: Send user email
+              // changeEmailCode(newEmail, email, req, res);
               
               Profile.updateOne(filter, update)
               .then( (data: any) => {
@@ -389,6 +391,7 @@ exports.updatePassword = (req: any, res: any ) => {
     console.log(req.body);
   
     let email = req.body.email;
+    let oldPassword = req.body.oldPassword;
     let newPassword = req.body.newPassword;
 
     if (!email || !newPassword) {
@@ -432,7 +435,7 @@ exports.updatePassword = (req: any, res: any ) => {
                       if (err) return err;
                       if(!profile) throw Error('No Profile with that email');
                       console.log('Updated Password: ' + JSON.stringify(profile));
-                      return res.status(200).send(isMatch);
+                      return res.status(200).send('Password Updated!');
 
                     })
                     // .then( (data: any) => {
@@ -608,4 +611,108 @@ exports.getUserProfile = (req: any, res: any) => {
       if(profile) res.status(200).json(profile);
     }
   )
+}
+exports.getFavoritePrograms = (req: any, res: any) => {
+  let email = req.body.email;
+  console.log(`Attempting to get ${email}'s' a favorite programs ...`);
+  Profile.findOne(
+      {email: email},
+      (err: Error, profile: any) => {
+        if(err) res.status(401).json(err);
+        if(!profile) res.status(400).json({msg: 'No Favori Array found! Check Program Model'});
+        if(profile) {
+          if(profile.length == 0) console.log('No programs found.');
+          console.log('Favorite Programs:');
+          console.log(profile.favoritePrograms);
+          return res.status(200).json(profile.favoritePrograms)
+        };
+      }
+  );
+}
+exports.favoriteProgram = (req: any, res: any) => {
+  let programID = req.body._id;
+  let email = req.body.email;
+  console.log('Attempting to Favorite a Program ...')
+  Program.findOne(
+      {_id: programID},
+      (err: Error, program: any) => {
+        if(err) res.status(401).json(err);
+        if(!program) res.status(400).json({msg: 'No Programs Array found! Check Program Model'});
+        if(program) {
+          if(program.length == 0) console.log('No programs found.');
+
+          Profile.findOne(
+            {email},
+            (err: Error, profile: any) => {
+              if(err) res.status(401).json(err);
+              if(!profile) res.status(400).json({msg: 'No Profile found!'});
+
+              let alreadyFavorited = false;
+              
+              profile.favoritePrograms.forEach((a: any) => {
+                if(a._id == programID) {
+                  alreadyFavorited = true;
+                } 
+              });
+
+              if(alreadyFavorited) {
+                console.log('This program was already favorited.');
+                return res.status(400).json({msg: 'There is already a program favorited with this _id'})
+              }
+              console.log('This program is able to be favorited ...');
+              
+               // Add program to favorites
+               Profile.findOneAndUpdate(
+                {email},
+                { $push: {favoritePrograms: program}},
+                {new: true},
+                (err: Error, profile: any) => {
+                  if(err) res.status(401).json(err);
+                  if(!profile) res.status(400).json({msg: 'No Profile found!'});
+                  if(profile) {
+                    if(profile.length == 0) console.log('No programs found.');
+                    console.log('Favorited Program!');
+                    console.log(profile.favoritePrograms);
+                    return res.status(200).json(profile.favoritePrograms)
+                  };
+                }
+              );
+
+            }
+          ) 
+        };
+      }
+);
+}
+exports.unfavoriteProgram = (req: any, res: any) => {
+  let programID = req.body._id;
+  let email = req.body.email;
+  console.log('Attempting to UNFavorite a Program ...')
+  Program.findOne(
+      {_id: programID},
+      (err: Error, program: any) => {
+        if(err) res.status(401).json(err);
+        if(!program) res.status(400).json({msg: 'No Programs Array found! Check Program Model'});
+        if(program) {
+          if(program.length == 0) console.log('No programs found.');
+
+          // delete program from favorites
+          Profile.findOneAndUpdate(
+           {email},
+           { $pull: {favoritePrograms: program}},
+           {new: true},
+           (err: Error, profile: any) => {
+             if(err) res.status(401).json(err);
+             if(!profile) res.status(400).json({msg: 'No Profile found!'});
+             if(profile) {
+               if(profile.length == 0) console.log('No programs found.');
+               console.log('Favorited Program!');
+               console.log(profile.favoritePrograms);
+               return res.status(200).json(profile.favoritePrograms)
+             };
+           }
+              );
+        };
+      }
+);
 }
