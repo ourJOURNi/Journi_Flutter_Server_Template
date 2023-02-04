@@ -109,6 +109,7 @@ exports.registerProfile = (req: any, res: any) => {
     let lastName = req.body.lastName;
     let email = req.body.email;
     let password = req.body.password;
+    let profilePicture = req.body.profilePicture;
     let dateRegistered = format(Date.now(), "MMMM do, yyyy");
   
     // Check if all info is in request.
@@ -136,7 +137,8 @@ exports.registerProfile = (req: any, res: any) => {
                     lastName,
                     email,
                     dateRegistered,
-                    password
+                    password,
+                    profilePicture
                 });
                 // Save Object
                 newProfile.save((err: Error, newProfile: Profile) => {

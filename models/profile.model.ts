@@ -28,6 +28,9 @@ const ProfileSchema: any = new mongoose.Schema(
       },
       password: {
         type: String,
+      },
+      profilePicture: {
+        type: String,
       }
   });
 

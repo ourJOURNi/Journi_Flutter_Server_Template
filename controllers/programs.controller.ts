@@ -7,6 +7,7 @@ interface Program {
     date: string,
     summary: string,
     details: string,
+    photo: string
 }
 
 exports.getAllPrograms = (req: any, res: any) => {
@@ -46,13 +47,15 @@ exports.addProgram = (req: any, res: any) => {
   let date = req.body.date;
   let summary = req.body.summary;
   let details = req.body.details;
+  let photo = req.body.photo;
   console.log('Attempting add a Program ...');
 
   let newProgram = Program({
     title,
     date,
     summary,
-    details
+    details,
+    photo
     });
     // Save Object
     newProgram.save((err: Error, newProgram: Program) => {
@@ -75,6 +78,7 @@ exports.editProgram = (req: any, res: any) => {
   let date = req.body.date;
   let summary = req.body.summary;
   let details = req.body.details;
+  let photo = req.body.photo;
 
   console.log('Attempting to Edit a Program ...');
   Program.updateOne(
@@ -83,7 +87,8 @@ exports.editProgram = (req: any, res: any) => {
         title,
         date,
         summary,
-        details
+        details,
+        photo
     },
     (err: Error, programs: any) => {
       if(err) res.status(401).json(err);

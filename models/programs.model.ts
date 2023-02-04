@@ -22,6 +22,10 @@ const ProgramSchema: any = new mongoose.Schema(
       details: {
         type: String,
         maxlength: 800,
+      },
+      photo: {
+        type: String,
+        maxlength: 800,
       }
   });
 
