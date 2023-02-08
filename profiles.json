@@ -1,0 +1,17 @@
+[{
+  "_id": {
+    "$oid": "63e1e98d0fd2115f42955c80"
+  },
+  "firstName": "Eddie",
+  "lastName": "Taliaferro",
+  "email": "eddie@journi.org",
+  "dateRegistered": "February 7th, 2023",
+  "favoritePrograms": [
+    {
+      "$oid": "63d0c0d3f5732f348d03fc9e"
+    }
+  ],
+  "password": "$2b$10$kdoqnenCsY0u2YPrDQjtCONcn4s7YUAp7TEiTITkGzJmEr5K5sB7O",
+  "profilePicture": "https://journi-app-profile-pics.s3.us-east-2.amazonaws.com/001001675820633037_profile-picture.jpg",
+  "__v": 0
+}]

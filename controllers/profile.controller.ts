@@ -8,8 +8,11 @@ const config = require('../config/default.json');
 const bcrypt = require("bcrypt");
 const Profile = require('../models/profile.model.ts');
 const Program = require('../models/programs.model.ts');
+const aws        = require('aws-sdk');
+const fs         = require('fs');
 
-interface Profile {
+
+interface newProfile {
     firstName: string,
     lastName: string,
     email: string,
@@ -103,59 +106,117 @@ function generateCode(length: number) {
   return result;
 }
 
+// Configures AWS settings relative to S3
+aws.config.update({
+  secretAccessKey: process.env.AWS_ACCESS_KEY,
+  accessKeyId: process.env.AWS_ACCESS_ID,
+  region: 'us-east-2'
+});
+
+// Creates a S3 instances
+const s3 = new aws.S3();
+
+// counter for picture storage file names
+// appends a prefix of 00+counter+00+ to Date.now()_profile-picture for filenames.
+var counter = 1;
+
 exports.registerProfile = (req: any, res: any) => {
     console.log(req.body);
+    console.log(req.file);
     let firstName = req.body.firstName;
     let lastName = req.body.lastName;
     let email = req.body.email;
     let password = req.body.password;
-    let profilePicture = req.body.profilePicture;
+    // let profilePicture = req.body.profilePicture;
     let dateRegistered = format(Date.now(), "MMMM do, yyyy");
   
     // Check if all info is in request.
     if(!firstName || !lastName || !email || !password) {
       return res.status(400).json({msg: "There was either no First or Last Name, Email, or Password in the Request!"})
     }
-
-    // Check validation of ETH Address
-
     // Check and see if Profile already exists
     Profile.findOne(
         {email: email},
-        (err: Error, profile: Profile) => {
+        async (err: Error, profile: newProfile) => {
             if(err) {
                 return res.status(400).json({ 'msg': err });
             }
             if(profile) {
                 console.log(profile);
-                
                 return res.status(400).json({ msg: 'The Profile already exists with this email' });
             } else {
-                // Create Profile Object
-                let newProfile = Profile({
-                    firstName,
-                    lastName,
-                    email,
-                    dateRegistered,
-                    password,
-                    profilePicture
-                });
-                // Save Object
-                newProfile.save((err: Error, newProfile: Profile) => {
-                    if (err) {
-                        console.log(err)
-                        return res.status(400).json({ 'msg': err });
+                // Create S3 Object
+                // source = full path of uploaded file
+              // example : profile-picture-uploads/1588052734468_profile-picture
+              // targetName = filename of uploaded file
+  
+              console.log('preparing to profile picture upload...');
+  
+              // Increase counter and append its number to each filename every time the uploadProfilePicture method is called.
+              if (counter >= 1 ) {
+                ++counter;
+                console.log('Counter: ' + counter)
+              }
+  
+              // Read the file, upload the file to S3, then delete file from the directory 'profile-picture-uploads'.
+              await fs.readFile( req.file.path, ( err: any, filedata: any ) => {
+  
+              if (!err) {
+                //  Creates Object to be stored in S3
+                const putParams = {
+                  Bucket      : process.env.S3_BUCKET_NAME,
+                  Key         : req.file.filename,
+                  Body        : filedata,
+                  ACL   : 'public-read'
+                };
+              
+                s3.putObject(putParams, function(err: any, data: any){
+                  if (err) {
+                    console.log('Could not upload the file. Error :', err);
+                    return res.send({success:false});
                     }
-                    if (!newProfile) {
-                        console.log('There was no profile saved!')
-                        return res.status(400).json({ msg: 'There was no profile saved!' });
-                    }
-                    console.log('Profile registered!');
-                    return res.status(200).json(newProfile);
+                  else {
+                    console.log('Data from uploading to S3 Bucket: ');
+                    console.log(data);
+    
+                    let objectUrl = process.env.AWS_URL+req.file.filename;
+    
+                    // Remove file from profile-picture-uploads directory
+                    fs.unlink(req.file.path, async () => {
+                      console.log('Successfully uploaded the file. ' + req.file.path + ' was deleted from server directory');
+                      console.log(objectUrl)
+
+                    // Create Profile Object
+                    let newProfile = await Profile({
+                      firstName,
+                      lastName,
+                      email,
+                      dateRegistered,
+                      password,
+                      profilePicture: objectUrl
                     });
-                }
-            }
-    )
+
+                    // Save Object
+                    await newProfile.save((err: Error, newProfile: newProfile) => {
+                        if (err) {
+                            console.log(err)
+                            return res.status(400).json({ 'msg': err });
+                        }
+                        if (!newProfile) {
+                            console.log('There was no profile saved!')
+                            return res.status(400).json({ msg: 'There was no profile saved!' });
+                        }
+                        console.log('Profile registered!');
+                        return res.status(200).json(newProfile);
+                        });
+                  });
+                  }
+                })
+              }
+
+              })
+        }
+      })
 }
 exports.sendRegisterCode = (req: any, res: any) => {
   console.clear();
@@ -325,14 +386,80 @@ exports.updateName = (req: any, res: any ) => {
       }
 }
 exports.updateProfilePicture = (req: any, res: any ) => {
-    console.log('Attempting to change Profile name...')
+    console.log('Attempting to Update Profile Picture...')
     console.log(req.body);
-  
-    let firstName = req.body.firstName;
-    let lastName = req.body.lastName;
+    console.log(req.file);
     let email = req.body.email;
     let password = req.body.password;
 
+    Profile.findOne(
+      {email: email},
+      (err: any, profile: any) => {
+        profile.comparePassword(password, async (err: any, isMatch: any) => {
+          if(err) {
+            console.log(err);
+            return res.status(400).json(err);
+          }
+          if(isMatch) {
+    
+            console.log('preparing to profile picture upload...');
+        
+            // Increase counter and append its number to each filename every time the uploadProfilePicture method is called.
+            if (counter >= 1 ) {
+              ++counter;
+              console.log('Counter: ' + counter)
+            }
+        
+            // Read the file, upload the file to S3, then delete file from the directory 'profile-picture-uploads'.
+            await fs.readFile( req.file.path, ( err: any, filedata: any ) => {
+        
+            if (!err) {
+              //  Creates Object to be stored in S3
+              const putParams = {
+                Bucket      : process.env.S3_BUCKET_NAME,
+                Key         : req.file.filename,
+                Body        : filedata,
+                ACL   : 'public-read'
+              };
+            
+              s3.putObject(putParams, function(err: any, data: any){
+                if (err) {
+                  console.log('Could not upload the file. Error :', err);
+                  return res.send({success:false});
+                  }
+                else {
+                  console.log('Data from uploading to S3 Bucket: ');
+                  console.log(data);
+        
+                  let objectUrl = process.env.AWS_URL+req.file.filename;
+        
+                  // Remove file from profile-picture-uploads directory
+                  fs.unlink(req.file.path, async () => {
+                    console.log('Successfully uploaded the file. ' + req.file.path + ' was deleted from server directory');
+                    console.log(objectUrl)
+        
+                    Profile.updateOne(
+                      {email: email},
+                      {profilePicture: objectUrl},
+                      {new: true},
+                      async (err: any, profile: any) => {
+                        if(err) return err;
+                        if(!profile) return err;
+                        if(profile) {
+                          return res.status(200).json(true)
+                        }
+                      })
+        
+                });
+                }
+              })
+            }
+        
+            })
+          }
+        });
+      }
+    )
 }
 exports.updateEmail = (req: any, res: any) => {
     console.log('Attempting to change Profile email...')
@@ -638,7 +765,10 @@ exports.favoriteProgram = (req: any, res: any) => {
   Program.findOne(
       {_id: programID},
       (err: Error, program: any) => {
-        if(err) res.status(401).json(err);
+        if(err) {
+          console.log(err);
+          res.status(401).json(err);
+        }
         if(!program) res.status(400).json({msg: 'No Programs Array found! Check Program Model'});
         if(program) {
           if(program.length == 0) console.log('No programs found.');
@@ -666,7 +796,7 @@ exports.favoriteProgram = (req: any, res: any) => {
                // Add program to favorites
                Profile.findOneAndUpdate(
                 {email},
-                { $push: {favoritePrograms: program}},
+                { $push: {favoritePrograms: program._id}},
                 {new: true},
                 (err: Error, profile: any) => {
                   if(err) res.status(401).json(err);
@@ -701,7 +831,7 @@ exports.unfavoriteProgram = (req: any, res: any) => {
           // delete program from favorites
           Profile.findOneAndUpdate(
            {email},
-           { $pull: {favoritePrograms: program}},
+           { $pull: {favoritePrograms: program._id}},
            {new: true},
            (err: Error, profile: any) => {
              if(err) res.status(401).json(err);
