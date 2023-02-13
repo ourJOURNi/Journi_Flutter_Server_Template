@@ -1,4 +1,5 @@
 export {};
+  import { profile } from 'console';
 import { format } from 'date-fns'
 const Program = require('../models/programs.model.ts');
 
@@ -19,6 +20,7 @@ exports.getAllPrograms = (req: any, res: any) => {
       if(!programs) res.status(400).json({msg: 'No Programs Array found! Check Program Model'});
       if(programs) {
         if(programs.length == 0) console.log('No programs saved.')
+        console.log(programs);
         res.status(200).json(programs)
       };
     }
@@ -26,7 +28,7 @@ exports.getAllPrograms = (req: any, res: any) => {
 }
 
 exports.getProgramInfo = (req: any, res: any) => {
-  let id = req.body._id;
+  let id = req.body.id;
   console.log('Attempting to get all Program Info ...')
   Program.findOne(
     {_id: id},
