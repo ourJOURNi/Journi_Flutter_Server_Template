@@ -23,7 +23,11 @@
     "nodemailer": "^6.8.0",
     "nodemailer-express-handlebars": "^5.0.0",
     "nodemon": "^2.0.20",
+<<<<<<< HEAD
+    "pm2": "^5.2.2",
+=======
     "path": "^0.12.7",
+>>>>>>> 07e2a0add91187afc9c60e51bc18530f2511d9cb
     "ts-node": "^10.9.1",
     "typescript": "^4.9.3"
   }
