@@ -121,19 +121,20 @@ const s3 = new aws.S3();
 var counter = 1;
 
 exports.registerProfile = (req: any, res: any) => {
+    console.log('Attemtping to Register Profile (Server)');
     console.log(req.body);
     console.log(req.file);
     let firstName = req.body.firstName;
     let lastName = req.body.lastName;
     let email = req.body.email;
     let password = req.body.password;
-    // let profilePicture = req.body.profilePicture;
     let dateRegistered = format(Date.now(), "MMMM do, yyyy");
   
     // Check if all info is in request.
-    if(!firstName || !lastName || !email || !password) {
-      return res.status(400).json({msg: "There was either no First or Last Name, Email, or Password in the Request!"})
+    if(!firstName || !lastName || !email || !password || !req.file) {
+      return res.status(400).json({msg: "Make sure all fields are filled out!"})
     }
+
     // Check and see if Profile already exists
     Profile.findOne(
         {email: email},
