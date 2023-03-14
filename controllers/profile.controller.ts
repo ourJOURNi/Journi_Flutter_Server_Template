@@ -299,7 +299,7 @@ exports.loginProfile = (req: any, res: any) => {
         }
   
         if (!profile) {
-            return res.status(400).json({ 'msg': 'The Profile does not exist' });
+            return res.status(400).json({msg: "The Profile does not exist" });
         }
   
         profile.comparePassword(req.body.password, (err: Error, isMatch: Boolean) => {
