@@ -41,6 +41,7 @@ const uploadUser = multer({
 router.post('/register-profile', uploadUser.single('profile-picture'), profileController.registerProfile);
 router.post('/send-register-code', profileController.sendRegisterCode);
 router.post('/login-profile', profileController.loginProfile);
+router.post('/delete-profile', profileController.deleteProfile);
 
 router.post('/get-user-profile', profileController.getUserProfile);
 

@@ -331,6 +331,52 @@ exports.loginProfile = (req: any, res: any) => {
         });
     });
 }
+exports.deleteProfile = (req: any, res: any) => {
+    console.log('Attempting to delete profile');
+    console.log(req.body);
+    let email = req.body.email;
+    let password = req.body.password;
+  
+    // Check if all info is in request.
+    if(!email || !password) {
+      return res.status(400).json({msg: "There was No Email or No Password in the Request!"})
+    }
+    
+    Profile.findOne(
+      {email: email},
+      (err: Error, profile: any) => {
+        if(err) return res.status(400).json({err});
+        if(!profile) return res.status(400).json({msg: 'No Profile!'});
+        console.log('Found Profile');
+        
+        profile.comparePassword(password, (err: Error, isMatch: Boolean) => {
+          console.log('Comparing Password')
+          if(err) console.log(err)
+          console.log(isMatch)
+          if (isMatch && !err) {
+              console.log(`isMatch = ${isMatch}`)
+              console.log('Deleted Profile: ' + email);
+
+              profile.deleteOne(
+                {email: email}, 
+                (err: Error, profile: InstanceType<typeof Profile>) => {
+                if (err) {
+                    return res.status(400).send({ 'msg': err });
+                }
+          
+                if (!profile) {
+                    return res.status(400).json({msg: "The Profile does not exist" });
+                }
+                return res.status(200).json({msg: "Deleted Profile!"})
+            });
+          } else {
+              return res.status(400).json({ msg: 'The email and password don\'t match.' });
+          }
+        });
+      }
+    )
+   
+}
 exports.updateName = (req: any, res: any ) => {
     console.log('Attempting to change Profile name...')
     console.log(req.body);
